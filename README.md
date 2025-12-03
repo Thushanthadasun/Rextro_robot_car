@@ -27,48 +27,41 @@ Use this button to turn haptics ON or OFF:
 <img width="80" height="78" alt="image" src="https://github.com/user-attachments/assets/3137d610-f2c5-4ce2-863e-e3446e1375b6" />
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Use Apache Cordava to convert index.html into apk.
-step by step guild:-
-https://cordova.apache.org/docs/en/latest/guide/cli/installation.html
-
-<b>*Install Requirements*</b>
+<strong>Install Requirements</strong>
 <ol>
-<li>Node.js + npm<br></li>
-<li>Cordova CLI<br></li>
-<li>npm install -g cordova<br></li>
-<li>Java JDK<br></li>
-<li>Android Studio or Android SDK (Platform, Build-Tools, Platform-Tools)<br></li>
+  <li>Node.js + npm</li>
+  <li>Cordova CLI — install with <code>npm install -g cordova</code></li>
+  <li>Java JDK (set <code>JAVA_HOME</code>)</li>
+  <li>Android Studio or Android SDK (Platform, Build-Tools, Platform-Tools). Make sure <code>ANDROID_SDK_ROOT</code> / <code>ANDROID_HOME</code> are set.</li>
 </ol>
 
-<b>*Create Project*</b>
-````bash
-cordova create rextro com.rextro.robot "Rextro Robot Car"
+<strong>Create Project</strong>
+<pre><code class="bash">cordova create rextro com.rextro.robot "Rextro Robot Car"
 cd rextro
-````
-<b>*Add Your Web App*</b>
+</code></pre>
 
-Replace everything inside the www/ folder with your own:
-
+<strong>Add your web app</strong>
+<p>Replace everything inside the <code>www/</code> folder with your site:</p>
+<pre><code>
 www/
  ├── index.html
  ├── css/
  ├── js/
  └── assets/
+</code></pre>
 
-Add Android Platform
-`cordova platform add android`
+<strong>Add Android platform</strong>
+<pre><code class="bash">cordova platform add android</code></pre>
 
-*Build APK*
-Debug (quick test)
-`cordova build android --debug`
+<strong>Build APK</strong>
+<ul>
+  <li>Debug (quick test): <code>cordova build android --debug</code></li>
+  <li>Release (unsigned): <code>cordova build android --release</code></li>
+</ul>
 
-<b>*Release (unsigned)*</b>
-cordova build android --release
+<p><strong>APK output folder:</strong><br>
+<code>platforms/android/app/build/outputs/apk</code></p>
 
-
-<b>*APK output folder:</b>*
-
-`platforms/android/app/build/outputs/apk`
 
 
 
