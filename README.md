@@ -1,4 +1,4 @@
-Rextro Robot Car
+<b>Rextro Robot Car</b>
 
 Android app for controlling your robot car
 
@@ -31,20 +31,21 @@ Use Apache Cordava to convert index.html into apk.
 step by step guild:-
 https://cordova.apache.org/docs/en/latest/guide/cli/installation.html
 
-*Install Requirements*
+<b>*Install Requirements*</b>
+<ol>
+<li>Node.js + npm<br></li>
+<li>Cordova CLI<br></li>
+<li>npm install -g cordova<br></li>
+<li>Java JDK<br></li>
+<li>Android Studio or Android SDK (Platform, Build-Tools, Platform-Tools)<br></li>
+</ol>
 
-1)Node.js + npm
-2)Cordova CLI
-3)npm install -g cordova
-4)Java JDK
-5)Android Studio or Android SDK (Platform, Build-Tools, Platform-Tools)
-
-*Create Project*
-'''bash
+<b>*Create Project*</b>
+````bash
 cordova create rextro com.rextro.robot "Rextro Robot Car"
 cd rextro
-
-📂 Add Your Web App
+````
+<b>*Add Your Web App*</b>
 
 Replace everything inside the www/ folder with your own:
 
@@ -54,32 +55,21 @@ www/
  ├── js/
  └── assets/
 
-📱 Add Android Platform
-cordova platform add android
+Add Android Platform
+`cordova platform add android`
 
-🛠️ Build APK
+*Build APK*
 Debug (quick test)
-cordova build android --debug
+`cordova build android --debug`
 
-Release (unsigned)
+<b>*Release (unsigned)*</b>
 cordova build android --release
 
 
-APK output folder:
+<b>*APK output folder:</b>*
 
-platforms/android/app/build/outputs/apk/
-
-🔌 Install on Device
-adb install -r app-debug.apk
-
-🔐 Sign Release APK
-keytool -genkey -v -keystore my-release-key.jks -alias rextro_alias
-zipalign -v -p 4 app-release-unsigned.apk app-release-aligned.apk
-apksigner sign --ks my-release-key.jks --out app-release-signed.apk app-release-aligned.apk
+`platforms/android/app/build/outputs/apk`
 
 
-Final APK:
-
-app-release-signed.apk
 
 
