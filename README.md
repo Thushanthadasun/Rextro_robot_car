@@ -95,357 +95,202 @@ www/
     <li>Update <code>app.js</code> to handle new interactions and BLE commands.</li>
 </ul>
 <hr>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPBot Pro #2 Documentation</title>
-    <style>
-        /* GitHub-like Styling */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #24292e;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1, h2, h3 {
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 0.3em;
-            margin-top: 24px;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 16px 0;
-        }
-        th, td {
-            border: 1px solid #dfe2e5;
-            padding: 6px 13px;
-        }
-        th {
-            background-color: #f6f8fa;
-            font-weight: 600;
-        }
-        tr:nth-child(2n) {
-            background-color: #f6f8fa;
-        }
-        code {
-            background-color: #f6f8fa;
-            border-radius: 3px;
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-            padding: 0.2em 0.4em;
-            font-size: 85%;
-        }
-        pre {
-            background-color: #f6f8fa;
-            padding: 16px;
-            border-radius: 6px;
-            overflow: auto;
-            line-height: 1.45;
-        }
-        pre code {
-            background-color: transparent;
-            padding: 0;
-            font-size: 100%;
-        }
-        blockquote {
-            border-left: 0.25em solid #dfe2e5;
-            color: #6a737d;
-            padding: 0 1em;
-            margin: 0;
-        }
-        hr {
-            height: 0.25em;
-            padding: 0;
-            margin: 24px 0;
-            background-color: #e1e4e8;
-            border: 0;
-        }
-    </style>
-</head>
-<body>
 
-    <h1>DPBot Pro #2</h1>
-    <p><strong>Hardware & Firmware Documentation for ESP32 Robot Control</strong></p>
+<h2>DPBot Pro #2 Hardware & Firmware</h2>
 
-    <h2>Hardware Requirements</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Component</th>
-                <th>Model / Type</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Microcontroller</td>
-                <td>ESP32 Dev Board</td>
-            </tr>
-            <tr>
-                <td>Motors</td>
-                <td>DC Motors (2)</td>
-            </tr>
-            <tr>
-                <td>Motor Driver</td>
-                <td>L298N / H-Bridge equivalent</td>
-            </tr>
-            <tr>
-                <td>Ultrasonic Sensor</td>
-                <td>HC-SR04 (single pin mode)</td>
-            </tr>
-            <tr>
-                <td>Temperature Sensor</td>
-                <td>DHT11</td>
-            </tr>
-            <tr>
-                <td>RGB LED</td>
-                <td>WS2812 / NeoPixel (2 LEDs)</td>
-            </tr>
-            <tr>
-                <td>OLED Display</td>
-                <td>128x64 SSD1306</td>
-            </tr>
-            <tr>
-                <td>Headlights</td>
-                <td>2 x LEDs or small lamps</td>
-            </tr>
-            <tr>
-                <td>Power Source</td>
-                <td>7.4V Li-ion / 5V regulated</td>
-            </tr>
-        </tbody>
-    </table>
+<h3>Hardware Requirements</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Model / Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Microcontroller</td>
+<td>ESP32 Dev Board</td>
+</tr>
+<tr>
+<td>Motors</td>
+<td>DC Motors (2)</td>
+</tr>
+<tr>
+<td>Motor Driver</td>
+<td>L298N / H-Bridge equivalent</td>
+</tr>
+<tr>
+<td>Ultrasonic Sensor</td>
+<td>HC-SR04 (single pin mode)</td>
+</tr>
+<tr>
+<td>Temperature Sensor</td>
+<td>DHT11</td>
+</tr>
+<tr>
+<td>RGB LED</td>
+<td>WS2812 / NeoPixel (2 LEDs)</td>
+</tr>
+<tr>
+<td>OLED Display</td>
+<td>128x64 SSD1306</td>
+</tr>
+<tr>
+<td>Headlights</td>
+<td>2 x LEDs or small lamps</td>
+</tr>
+<tr>
+<td>Power Source</td>
+<td>7.4V Li-ion / 5V regulated</td>
+</tr>
+</tbody>
+</table>
 
-    <h2>Wiring & Pin Configuration</h2>
-    <p>Below is the pin mapping for the ESP32. Ensure common ground between the ESP32 and the Motor Driver.</p>
-
-    
+<h3>Wiring & Pin Configuration</h3>
+<p>Ensure common ground between the ESP32 and the Motor Driver.</p>
 
 [Image of ESP32 L298N motor driver wiring diagram]
 
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Pin ESP32</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Left Motor A</td>
+<td>16</td>
+<td>PWM Output</td>
+</tr>
+<tr>
+<td>Left Motor B</td>
+<td>17</td>
+<td>PWM Output</td>
+</tr>
+<tr>
+<td>Right Motor A</td>
+<td>18</td>
+<td>PWM Output</td>
+</tr>
+<tr>
+<td>Right Motor B</td>
+<td>27</td>
+<td>PWM Output</td>
+</tr>
+<tr>
+<td>RGB LEDs</td>
+<td>14</td>
+<td>NeoPixel (GRB)</td>
+</tr>
+<tr>
+<td>DHT11 Sensor</td>
+<td>26</td>
+<td>Data Pin</td>
+</tr>
+<tr>
+<td>Ultrasonic</td>
+<td>5</td>
+<td>Trigger/Echo</td>
+</tr>
+<tr>
+<td>Headlight 1</td>
+<td>15</td>
+<td>Digital Out</td>
+</tr>
+<tr>
+<td>Headlight 2</td>
+<td>2</td>
+<td>Digital Out</td>
+</tr>
+<tr>
+<td>OLED SDA</td>
+<td>21</td>
+<td>I2C</td>
+</tr>
+<tr>
+<td>OLED SCL</td>
+<td>22</td>
+<td>I2C</td>
+</tr>
+</tbody>
+</table>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Function</th>
-                <th>Pin ESP32</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Left Motor A</td>
-                <td>16</td>
-                <td>PWM Output</td>
-            </tr>
-            <tr>
-                <td>Left Motor B</td>
-                <td>17</td>
-                <td>PWM Output</td>
-            </tr>
-            <tr>
-                <td>Right Motor A</td>
-                <td>18</td>
-                <td>PWM Output</td>
-            </tr>
-            <tr>
-                <td>Right Motor B</td>
-                <td>27</td>
-                <td>PWM Output</td>
-            </tr>
-            <tr>
-                <td>RGB LEDs</td>
-                <td>14</td>
-                <td>NeoPixel, GRB, NEO_KHZ800</td>
-            </tr>
-            <tr>
-                <td>DHT11 Temp Sensor</td>
-                <td>26</td>
-                <td>Data Pin</td>
-            </tr>
-            <tr>
-                <td>Ultrasonic Sensor</td>
-                <td>5</td>
-                <td>Single-pin trigger/echo</td>
-            </tr>
-            <tr>
-                <td>Headlight 1</td>
-                <td>15</td>
-                <td>Digital output</td>
-            </tr>
-            <tr>
-                <td>Headlight 2</td>
-                <td>2</td>
-                <td>Digital output</td>
-            </tr>
-            <tr>
-                <td>OLED SDA</td>
-                <td>21</td>
-                <td>Wire / I2C</td>
-            </tr>
-            <tr>
-                <td>OLED SCL</td>
-                <td>22</td>
-                <td>Wire / I2C</td>
-            </tr>
-        </tbody>
-    </table>
+<hr>
 
-    <hr>
+<h3>BLE Communication Protocol</h3>
+<ul>
+<li><strong>Device Name:</strong> <code>DPBot Pro #2</code></li>
+<li><strong>Service UUID:</strong> <code>4fafc201-1fb5-459e-8fcc-c5c9c331914b</code></li>
+<li><strong>Characteristic UUID:</strong> <code>beb5483e-36e1-4688-b7f5-ea07361b26a8</code></li>
+</ul>
 
-    <h2>BLE Communication Protocol</h2>
-    <ul>
-        <li><strong>BLE Device Name:</strong> <code>DPBot Pro #2</code></li>
-        <li><strong>Service UUID:</strong> <code>4fafc201-1fb5-459e-8fcc-c5c9c331914b</code></li>
-        <li><strong>Characteristic UUID:</strong> <code>beb5483e-36e1-4688-b7f5-ea07361b26a8</code></li>
-    </ul>
+<h4>Command Packet (7 Bytes)</h4>
+<table>
+<thead>
+<tr>
+<th>Byte</th>
+<th>Function</th>
+<th>Range/Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Start Byte</td>
+<td>0xFF</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Forward/Back</td>
+<td>-100 to 100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Turn</td>
+<td>-100 to 100</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Red</td>
+<td>0-255</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Green</td>
+<td>0-255</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Blue</td>
+<td>0-255</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Headlight</td>
+<td>0=OFF, 1=ON</td>
+</tr>
+</tbody>
+</table>
 
-    <h3>Command Packet (7 Bytes)</h3>
-    <p>Sent from App to Robot.</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Byte</th>
-                <th>Function</th>
-                <th>Type</th>
-                <th>Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>0</td>
-                <td>Start Byte</td>
-                <td>0xFF</td>
-                <td>Identifies valid packet</td>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Forward/Backward</td>
-                <td>int8_t</td>
-                <td>Range: -100 to 100</td>
-            </tr>
-            <tr>
-                <td>2</td>
-                <td>Turn Value</td>
-                <td>int8_t</td>
-                <td>Range: -100 to 100</td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td>RGB Red</td>
-                <td>uint8_t</td>
-                <td>0-255</td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td>RGB Green</td>
-                <td>uint8_t</td>
-                <td>0-255</td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td>RGB Blue</td>
-                <td>uint8_t</td>
-                <td>0-255</td>
-            </tr>
-            <tr>
-                <td>6</td>
-                <td>Headlight ON/OFF</td>
-                <td>uint8_t</td>
-                <td>0 = OFF, 1 = ON</td>
-            </tr>
-        </tbody>
-    </table>
+<hr>
 
-    <h3>Sensor Notification (2 Bytes)</h3>
-    <p>Sent from Robot to App (Notify).</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Byte</th>
-                <th>Function</th>
-                <th>Type</th>
-                <th>Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>0</td>
-                <td>Distance (cm)</td>
-                <td>uint8_t</td>
-                <td>Constrained 0–255</td>
-            </tr>
-            <tr>
-                <td>1</td>
-                <td>Temperature °C</td>
-                <td>uint8_t</td>
-                <td>Constrained 0–255</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>OLED Display & RGB Status</h2>
-    <p><strong>Startup sequence:</strong> OLED init bar → BLE init bar → Robot logo (1 sec).</p>
-    <p><strong>Live Status Display:</strong></p>
-    <pre>
+<h3>OLED Display Status</h3>
+<pre>
 CONNECTED
 FWD: 45    ██████████
 TURN: -20  ████
 RGB: 255 128 0
 </pre>
-    <p><em>RGB LEDs are controlled by BLE values and updated in real-time.</em></p>
 
-    <hr>
-
-    <h2>Software Setup</h2>
-    <ol>
-        <li>Install <strong>Arduino IDE</strong> or <strong>PlatformIO</strong>.</li>
-        <li>Install the following libraries:
-            <ul>
-                <li><code>Adafruit_SSD1306</code></li>
-                <li><code>Adafruit_GFX</code></li>
-                <li><code>Adafruit_NeoPixel</code></li>
-                <li><code>DHT sensor library</code></li>
-                <li><code>BLE (ESP32 BLE Arduino)</code></li>
-            </ul>
-        </li>
-        <li>Connect ESP32 and select correct board/port.</li>
-        <li>Copy firmware code to the Arduino IDE or PlatformIO.</li>
-        <li>Compile and upload.</li>
-    </ol>
-    <blockquote>
-        <strong>Important:</strong> Make sure PWM pins are attached correctly using <code>ledcAttachPin()</code> as configured in the code.
-    </blockquote>
-
-    <h2>Usage Example</h2>
-    <ol>
-        <li>Power the robot via Li-ion or regulated supply.</li>
-        <li>Pair with smartphone app (BLE) named <code>DPBot Pro #2</code>.</li>
-        <li>Send 7-byte commands over BLE to control motors, RGB, and headlights.</li>
-        <li>Observe OLED for live status bars.</li>
-        <li>Receive real-time sensor notifications via BLE.</li>
-    </ol>
-
-    <h3>Example BLE Command Code</h3>
-    <pre><code>uint8_t command[7] = {0xFF, 50, -20, 255, 128, 0, 1};
-pCharacteristic->setValue(command, 7);
-pCharacteristic->notify();</code></pre>
-
-    <h2>Troubleshooting</h2>
-    <ul>
-        <li><strong>Motors not moving:</strong> check PWM pins, inversion flags (<code>invertLeft</code> / <code>invertRight</code>).</li>
-        <li><strong>OLED not displaying:</strong> verify I2C connections and OLED address (<code>0x3C</code>).</li>
-        <li><strong>BLE not connecting:</strong> ensure device name matches and BLE is advertising.</li>
-        <li><strong>RGB LEDs not lighting:</strong> check NeoPixel wiring and <code>pixels.show()</code> updates.</li>
-    </ul>
-
-</body>
-</html>
+<h3>Software Setup</h3>
+<ol>
+<li>Install <strong>Arduino IDE</strong> or <strong>PlatformIO</strong>.</li>
+<li>Install Libraries: <code>Adafruit_SSD1306</code>, <code>Adafruit_GFX</code>, <code>Adafruit_NeoPixel</code>, <code>DHT sensor</code>, <code>ESP32 BLE Arduino</code>.</li>
+<li>Ensure PWM pins are attached using <code>ledcAttachPin()</code>.</li>
+<li>Compile and upload to
 
 
 
