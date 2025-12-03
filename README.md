@@ -62,6 +62,39 @@ www/
 <p><strong>APK output folder:</strong><br>
 <code>platforms/android/app/build/outputs/apk</code></p>
 
+``html
+<strong>Modifying the App Interface</strong>
+<p>The app interface is built with <strong>HTML, CSS, and JavaScript</strong> inside the <code>www</code> folder. To customize:</p>
+
+<h2>HTML Layout (<code>index.html</code>)</h2>
+<p>Add or remove buttons, sliders, or panels.</p>
+<pre lang="html"><code>&lt;button id="myButton"&gt;Click Me&lt;/button&gt;</code></pre>
+
+<h2>CSS Styling (<code>css/style.css</code>)</h2>
+<p>Change colors, fonts, sizes, or layout.</p>
+<pre lang="css"><code>#myButton {
+    background-color: #ff0000;
+    font-size: 18px;
+}</code></pre>
+
+<h2>JavaScript Behavior (<code>js/app.js</code>)</h2>
+<p>Update event listeners for new buttons or controls.</p>
+<pre lang="javascript"><code>document.getElementById("myButton").addEventListener("click", function() {
+    alert("Button clicked!");
+});</code></pre>
+
+<h2>Testing Changes</h2>
+<ul>
+    <li>Use a browser for quick UI tests.</li>
+    <li>Use <code>cordova run android</code> / <code>cordova run ios</code> to test on device.</li>
+</ul>
+
+<h2>Optional: Add New Screens</h2>
+<ul>
+    <li>Create new HTML pages and link via buttons.</li>
+    <li>Update <code>app.js</code> to handle new interactions and BLE commands.</li>
+</ul>
+
 
 
 
