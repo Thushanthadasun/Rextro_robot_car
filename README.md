@@ -1,4 +1,4 @@
-<b><h1>Rextro Robot Car</h1></b>
+<h1 style="font-weight:900; color:#333;">Rextro Robot Car</h1>
 
 Android app for controlling your robot car
 
