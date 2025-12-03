@@ -1,1 +1,251 @@
 
+from machine import Pin, PWM, ADC, time_pulse_us
+import network
+import socket
+import time
+
+# ===== WIFI DETAILS =====
+ssid = "HONOR X6b"
+password = "sachira3318"
+
+# ===== MOTOR PINS =====
+right_forward  = Pin(27, Pin.OUT)
+right_backward = Pin(18, Pin.OUT)
+left_forward   = Pin(16, Pin.OUT)
+left_backward  = Pin(17, Pin.OUT)
+
+motor_freq = 1500
+motor_speed = 600
+
+right_f_pwm  = PWM(right_forward, freq=motor_freq, duty=0)
+right_b_pwm  = PWM(right_backward, freq=motor_freq, duty=0)
+left_f_pwm   = PWM(left_forward, freq=motor_freq, duty=0)
+left_b_pwm   = PWM(left_backward, freq=motor_freq, duty=0)
+
+# ===== LED & BUZZER =====
+led_a = Pin(2, Pin.OUT)
+led_b = Pin(15, Pin.OUT)
+buzzer = PWM(Pin(25))
+buzzer.deinit()
+
+# ===== IR SENSOR =====
+reflect_sensor = ADC(Pin(33))
+reflect_sensor.atten(ADC.ATTN_11DB)
+reflect_sensor.width(ADC.WIDTH_12BIT)
+
+WHITE_THRESHOLD = 1700
+BLACK_THRESHOLD = 500
+
+def detect_platform():
+    value = reflect_sensor.read()
+    if value >= WHITE_THRESHOLD:
+        return "white", value
+    if value <= BLACK_THRESHOLD:
+        return "black", value
+    return "unknown", value
+
+# ===== ULTRASONIC SENSOR (single-pin) =====
+ultra = Pin(5, Pin.OUT)
+
+def get_distance():
+    ultra.off()
+    time.sleep_us(2)
+    ultra.on()
+    time.sleep_us(10)
+    ultra.off()
+
+    ultra.init(Pin.IN)
+    duration = time_pulse_us(ultra, 1, 30000)
+    ultra.init(Pin.OUT)
+
+    dist = (duration / 2) / 29.1
+    return dist
+
+# ===== MOTOR CONTROL =====
+def stop():
+    right_f_pwm.duty(0)
+    right_b_pwm.duty(0)
+    left_f_pwm.duty(0)
+    left_b_pwm.duty(0)
+
+def run_command(cmd):
+    if cmd == "F":
+        right_b_pwm.duty(0)
+        left_b_pwm.duty(0)
+        right_f_pwm.duty(motor_speed)
+        left_f_pwm.duty(motor_speed)
+    elif cmd == "B":
+        right_f_pwm.duty(0)
+        left_f_pwm.duty(0)
+        right_b_pwm.duty(motor_speed)
+        left_b_pwm.duty(motor_speed)
+    elif cmd == "L":
+        right_f_pwm.duty(motor_speed)
+        left_b_pwm.duty(motor_speed)
+        right_b_pwm.duty(0)
+        left_f_pwm.duty(0)
+    elif cmd == "R":
+        right_b_pwm.duty(motor_speed)
+        left_f_pwm.duty(motor_speed)
+        right_f_pwm.duty(0)
+        left_b_pwm.duty(0)
+    elif cmd == "S":
+        stop()
+    elif cmd == "LED_ON":
+        led_a.on()
+        led_b.on()
+    elif cmd == "LED_OFF":
+        led_a.off()
+        led_b.off()
+    elif cmd == "SOUND":
+        buzzer.init(freq=600, duty=400)
+        time.sleep(0.2)
+        buzzer.deinit()
+
+# ===== WIFI CONNECT =====
+w = network.WLAN(network.STA_IF)
+w.active(True)
+w.connect(ssid, password)
+
+print("Connecting to WiFi...")
+while not w.isconnected():
+    time.sleep(0.2)
+print("Connected! IP:", w.ifconfig()[0])
+
+# ===== WEBPAGE =====
+CONTROL_PAGE = """HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Controller</title>
+<style>
+body { font-family: Arial; background:#111; color:#fff; text-align:center; }
+h1 { margin-top: 24px; }
+.grid { display:grid; gap:12px; grid-template-columns:repeat(3,100px); justify-content:center; margin:24px auto; }
+button {
+    padding:12px; font-size:16px; border:none; border-radius:8px; cursor:pointer; 
+    background:#2b8be3; color:#fff;
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+button:active { transform:scale(0.97); }
+.wide { grid-column:span 3; }
+.status { margin-top:16px; min-height:24px; }
+</style>
+
+</head>
+<body>
+<h1>Robot Controller</h1>
+<div class="grid">
+<span></span>
+<button id="btnF">Forward</button>
+<span></span>
+<button id="btnL">Left</button>
+<button id="btnS">Stop</button>
+<button id="btnR">Right</button>
+<span></span>
+<button id="btnB">Reverse</button>
+<span></span>
+<button class="wide" id="ledOn">LED On</button>
+<button class="wide" id="ledOff">LED Off</button>
+<button class="wide" id="beep">Beep</button>
+</div>
+<div class="status" id="status">Connecting...</div>
+
+<script>
+let cooldown = false;
+let active = null;
+
+function sendCommand(cmd){
+    fetch("/action?cmd=" + cmd);
+}
+
+function handleMoveButton(btn, cmd){
+    btn.addEventListener("pointerdown", ()=>{
+        if(cooldown) return;
+        active = cmd;
+        sendCommand(cmd);
+    });
+    btn.addEventListener("pointerup", ()=>{
+        sendCommand("S");
+        active = null;
+        cooldown = true;
+        setTimeout(()=>{ cooldown=false; }, 200);
+    });
+    btn.addEventListener("pointerleave", ()=>{
+        if(active===cmd){
+            sendCommand("S");
+            active=null;
+            cooldown=true;
+            setTimeout(()=>{ cooldown=false; }, 200);
+        }
+    });
+}
+
+// Movement buttons
+handleMoveButton(document.getElementById("btnF"),"F");
+handleMoveButton(document.getElementById("btnB"),"B");
+handleMoveButton(document.getElementById("btnL"),"L");
+handleMoveButton(document.getElementById("btnR"),"R");
+
+// Stop button
+document.getElementById("btnS").addEventListener("click",()=>sendCommand("S"));
+
+// LED / Buzzer buttons
+document.getElementById("ledOn").addEventListener("click",()=>sendCommand("LED_ON"));
+document.getElementById("ledOff").addEventListener("click",()=>sendCommand("LED_OFF"));
+document.getElementById("beep").addEventListener("click",()=>sendCommand("SOUND"));
+
+// ===== CONTINUOUS SENSOR UPDATE =====
+setInterval(async ()=>{
+    const res = await fetch("/platform");
+    const data = await res.json();
+    document.getElementById("status").textContent =
+        `Platform: ${data.color} (raw ${data.raw[0]}) | Distance: ${data.distance_cm.toFixed(1)} cm`;
+}, 500);
+</script>
+</body>
+</html>
+"""
+
+ACTION_OK = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}"
+ACTION_BAD = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nInvalid command"
+
+# ===== HTTP SERVER =====
+addr = socket.getaddrinfo("0.0.0.0", 80)[0][-1]
+server = socket.socket()
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(addr)
+server.listen(1)
+
+print("HTTP server ready at http://{}".format(w.ifconfig()[0]))
+
+while True:
+    conn, addr = server.accept()
+    request = conn.recv(1024)
+    if not request:
+        conn.close()
+        continue
+
+    request_line = request.decode().split("\r\n")[0]
+    path = request_line.split(" ")[1] if len(request_line.split(" "))>1 else "/"
+
+    if path.startswith("/platform"):
+        color, raw = detect_platform()
+        dist = get_distance()
+        payload = '{{"color":"{}","raw":[{}],"distance_cm":{}}}'.format(color, raw, dist)
+        conn.send(ACTION_OK.format(payload))
+    elif path.startswith("/action") and "cmd=" in path:
+        cmd = path.split("cmd=")[-1].split("&")[0].upper()
+        run_command(cmd)
+        payload = '{{"status":"ok","cmd":"{}"}}'.format(cmd)
+        conn.send(ACTION_OK.format(payload))
+    else:
+        conn.send(CONTROL_PAGE)
+
+    conn.close()
