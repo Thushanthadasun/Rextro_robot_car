@@ -62,7 +62,7 @@ www/
 <p><strong>APK output folder:</strong><br>
 <code>platforms/android/app/build/outputs/apk</code></p>
 
-``html
+
 <strong>Modifying the App Interface</strong>
 <p>The app interface is built with <strong>HTML, CSS, and JavaScript</strong> inside the <code>www</code> folder. To customize:</p>
 
