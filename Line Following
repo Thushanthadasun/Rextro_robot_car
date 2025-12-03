@@ -1,1 +1,124 @@
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// MOTOR PINS (PWM capable)
+#define MOTOR1_P 17
+#define MOTOR1_N 16
+#define MOTOR2_P 18
+#define MOTOR2_N 27
+
+// IR SENSOR PINS
+#define LEFT_SENSOR 33
+#define RIGHT_SENSOR 13
+
+// START BUTTON
+#define RIGHT_BUTTON 34
+
+// OLED
+Adafruit_SSD1306 display(128, 64);
+
+int baseSpeed = 75;   // forward speed
+int turnSpeed = 150;   // turning speed
+int threshold = 50;   // threshold between white and black (tune if needed)
+
+//------------------ SETUP ------------------
+void setup() {
+  Serial.begin(115200);
+
+  // OLED setup
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.println("2-Sensor Line Follower");
+  display.display();
+
+  // Motor pins
+  pinMode(MOTOR1_P, OUTPUT);
+  pinMode(MOTOR1_N, OUTPUT);
+  pinMode(MOTOR2_P, OUTPUT);
+  pinMode(MOTOR2_N, OUTPUT);
+
+  // Sensor pins
+  pinMode(LEFT_SENSOR, INPUT);
+  pinMode(RIGHT_SENSOR, INPUT);
+
+  // Button
+  pinMode(RIGHT_BUTTON, INPUT);
+
+  // Wait for start
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Press Right Button to Start");
+  display.display();
+  while (digitalRead(RIGHT_BUTTON));
+  delay(200);
+}
+
+//------------------ MOTOR FUNCTIONS ------------------
+void forward(int speed) {
+  analogWrite(MOTOR1_P, 0);
+  analogWrite(MOTOR1_N, speed);
+  analogWrite(MOTOR2_P, 0);
+  analogWrite(MOTOR2_N, speed);
+}
+
+void turnLeft(int speed) {
+  analogWrite(MOTOR1_P, speed);
+  analogWrite(MOTOR1_N, 0);
+  analogWrite(MOTOR2_P, 0);
+  analogWrite(MOTOR2_N, speed);
+}
+
+void turnRight(int speed) {
+  analogWrite(MOTOR1_P, 0);
+  analogWrite(MOTOR1_N, speed);
+  analogWrite(MOTOR2_P, speed);
+  analogWrite(MOTOR2_N, 0);
+}
+
+void stopMotors() {
+  analogWrite(MOTOR1_P, 0);
+  analogWrite(MOTOR1_N, 0);
+  analogWrite(MOTOR2_P, 0);
+  analogWrite(MOTOR2_N, 0);
+}
+
+//------------------ MAIN LOOP ------------------
+void loop() {
+  int leftVal = analogRead(LEFT_SENSOR);
+  int rightVal = analogRead(RIGHT_SENSOR);
+
+  // BLACK detection: high value = black
+  bool leftBlack = rightVal < threshold;
+  bool rightBlack = leftVal < threshold;
+
+  // Debug serial output
+  Serial.print("Left: "); Serial.print(leftVal);
+  Serial.print(" | Right: "); Serial.println(rightVal);
+
+  // OLED display
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Left: "); display.println(leftVal);
+  display.print("Right: "); display.println(rightVal);
+  display.display();
+
+  // LINE FOLLOWING LOGIC
+  if (!leftBlack && !rightBlack) {   // both white
+    forward(baseSpeed);
+  } 
+  else if (leftBlack && !rightBlack) { // left on black
+    turnLeft(turnSpeed);
+  } 
+  else if (!leftBlack && rightBlack) { // right on black
+    turnRight(turnSpeed);
+  } 
+  else { // both on black
+    stopMotors();
+  }
+
+  delay(10); // small delay
+}
 
