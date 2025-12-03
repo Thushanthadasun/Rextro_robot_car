@@ -5,8 +5,8 @@ import socket
 import time
 
 # ===== WIFI DETAILS =====
-ssid = "HONOR X6b"
-password = "sachira3318"
+ssid = "XXXXXXXX"// Your Wifi name 
+password = "XXXXXXXXXXX"// Your wifi password
 
 # ===== MOTOR PINS =====
 right_forward  = Pin(27, Pin.OUT)
