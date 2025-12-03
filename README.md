@@ -1,4 +1,4 @@
-<b>Rextro Robot Car</b>
+<b><h1>Rextro Robot Car<h1></b>
 
 Android app for controlling your robot car
 
