@@ -629,3 +629,52 @@ cordova run android</code></pre>
     <li>Set <code>SplashScreenDelay=0</code> and <code>FadeSplashScreen=false</code> for smooth startup.</li>
     <li>Build and test on an Android device to see your animation immediately on boot.</li>
 </ul>
+
+
+📂 Additional Control Files
+1. Controlling with BT Car Controller App
+
+This folder contains the code required to control the robot car using an Android Bluetooth controller app.
+
+🔗 Android App Link:
+https://play.google.com/store/apps/details?id=com.giristuido.bluetooth.car.controller
+
+Features:
+
+Connects to the robot car via Bluetooth.
+
+Sends movement commands using onscreen controls.
+
+Fully compatible with the provided Arduino/ESP32 control code.
+
+2. Controlling with Web Browser
+
+This folder includes the code for Wi-Fi–based control.
+
+How it works:
+
+The robot creates/joins a Wi-Fi hotspot.
+
+It displays an IP address.
+
+You can connect your phone to the hotspot and type the IP into any browser.
+
+The webpage provides buttons to control the motors and lights.
+
+Useful when:
+
+You don’t want to use a Bluetooth app.
+
+You want control through any device with a browser.
+
+3. Line Following Code
+
+This folder includes the line following algorithm.
+
+Description:
+
+Uses a black-line sensor (IR array or simple IR modules).
+
+Follows a black line on a white surface.
+
+Automatically adjusts motor speed to turn, stop, or continue along a curved track.
