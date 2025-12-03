@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REXTRO Animation Loop</title>
+    <style>
+        /* --- 1. GLOBAL RESET --- */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            font-family: 'Arial Black', sans-serif;
+            overflow: hidden;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .loader-container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            width: 80%;
+            max-width: 900px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            /* White Glow Effect */
+            filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+        }
+
+        /* --- 2. ANIMATION SETTINGS --- */
+        .logo-anim {
+            fill-opacity: 0;
+            stroke: #ffffff;
+            stroke-width: 0.3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 4000;
+            stroke-dashoffset: 4000;
+            
+            /* TOTAL DURATION: 10 Seconds */
+            animation: fullCycle 8s ease-in-out infinite;
+        }
+
+        @keyframes fullCycle {
+            0% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+            60% { stroke-dashoffset: 0; fill-opacity: 0; stroke: #ffffff; }
+            60% { stroke-dashoffset: 0; fill-opacity: 1; stroke: transparent; }
+            60% { stroke-dashoffset: 0; fill-opacity: 1; stroke: transparent; }
+            80% { stroke-dashoffset: 0; fill-opacity: 0; stroke: #ffffff; }
+            80% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+            100% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+        }
+
+        /* --- 3. GRADIENTS --- */
+        .path-center { fill: url(#linearGradient16); }
+        .path-text { fill: url(#linearGradient17); }
+
+        /* --- 4. SPINNER & TEXT --- */
+        .spinner-area {
+            margin-top: 40px;
+            opacity: 0;
+            animation: fadeInOut 8s ease-in-out infinite;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px dotted rgba(255, 255, 255, 0.2);
+            border-top: 4px dotted #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+
+        .loading-text {
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+            letter-spacing: 5px;
+            color: #666;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInOut { 0%, 100% { opacity: 0; } 20%, 80% { opacity: 1; } }
+
+        /* --- 5. BACKGROUND STARS (Static Gradients) --- */
+        .background-stars {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            z-index: 1;
+            opacity: 0.3;
+            overflow: hidden; 
+        }
+
+        /* --- 6. ANIMATED PARTICLES --- */
+        .star-particle {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #fff, 0 0 6px rgba(255, 255, 255, 0.4);
+            opacity: 0; /* Start invisible */
+            
+            /* Two animations: 
+               1. Twinkle (Pulse opacity/scale) 
+               2. Drift (Move using CSS variables set in JS) */
+            animation: 
+                twinkle var(--duration) ease-in-out infinite var(--delay),
+                drift var(--move-duration) ease-in-out infinite alternate;
+        }
+
+        /* Pulse Size and Opacity */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Move based on random variables set in JS */
+        @keyframes drift {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                /* --moveX and --moveY are injected by JS for each specific star */
+                transform: translate(var(--moveX), var(--moveY));
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-stars" id="star-container"></div>
+
+    <div class="loader-container">
+        <svg viewBox="0 0 291.04165 158.75002" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <defs id="defs19">
+                <linearGradient id="linearGradient938">
+                    <stop style="stop-color:#d40000" offset="0" />
+                    <stop style="stop-color:#000080" offset="1" />
+                </linearGradient>
+                <linearGradient inkscape:collect="always" id="linearGradient6993-1">
+                    <stop style="stop-color:#002255;stop-opacity:1;" offset="0" />
+                    <stop style="stop-color:#0044aa;stop-opacity:1" offset="0.45" />
+                    <stop style="stop-color:#213f6b;stop-opacity:1" offset="1" />
+                </linearGradient>
+                <linearGradient inkscape:collect="always" xlink:href="#linearGradient938" id="linearGradient16" gradientUnits="userSpaceOnUse" x1="249" y1="86" x2="365" y2="86" />
+                <linearGradient inkscape:collect="always" xlink:href="#linearGradient6993-1" id="linearGradient17" gradientUnits="userSpaceOnUse" x1="222" y1="85" x2="353" y2="85" />
+            </defs>
+
+            <g id="g16" transform="matrix(1.4056,0,0,1.4056,-259.6036,-42.986385)">
+                <path id="path15" class="logo-anim path-center" d="m 274.62014,69.680964 -13.8414,1.47e-4 9.81458,15.350572 -10.62924,15.001657 h 11.27568 l 7.08769,-10.02707 v 10.02707 h 13.96074 l -9.98836,-15.646865 v -9.18e-4 l 10.41742,-14.704631 h -11.27477 l -6.82234,9.654203 z" />
+                <path id="path16" class="logo-anim path-text" d="m 291.76468,76.162907 -2.99257,4.223514 h 7.12462 v 13.898893 h 4.22352 V 80.386421 h 6.60889 v -4.223514 z m 50.78037,0.124542 c -2.02769,0.0063 -4.06617,0.09379 -6.11331,0.243911 -2.58302,0.189413 -4.4256,1.937433 -4.67725,4.318601 -0.18375,2.988579 -0.2835,5.964316 0,8.733316 0.25165,2.381165 2.09423,4.12919 4.67725,4.318598 2.04714,0.150122 4.08562,0.237646 6.11331,0.243914 2.02769,0.0063 4.04458,-0.0687 6.04768,-0.243914 2.57967,-0.225624 4.3873,-1.941148 4.67726,-4.318598 0.29236,-2.989517 0.33094,-5.955107 0,-8.733316 -0.28993,-2.377454 -2.09759,-4.092975 -4.67726,-4.318601 -2.0031,-0.175204 -4.01999,-0.250185 -6.04768,-0.243911 z m -105.5615,0.203604 c -0.31964,-0.0019 -0.59616,0.0041 -0.81132,0.0041 H 222.93944 V 94.34936 h 4.24108 l 0.0103,-4.847767 v -8.891958 h 0.23257 v 5.29e-4 h 9.36739 c 0.0148,0 0.0277,0.0013 0.0424,0.0016 h 0.11525 c 0.16725,0 0.3302,0.01678 0.48781,0.04857 0.005,0.0011 0.0101,0.0021 0.0151,0.0031 0.50731,0.08912 0.86539,0.288208 1.11672,0.565341 0.50036,0.445534 0.81651,1.093245 0.81651,1.81901 0,0.94315 -0.53131,1.755979 -1.31154,2.161109 -0.0429,0.0232 -0.0883,0.04376 -0.13386,0.06408 -0.0185,0.0082 -0.0366,0.01709 -0.0553,0.02479 -0.0233,0.0096 -0.0479,0.01754 -0.0718,0.02635 -0.26852,0.101404 -0.55861,0.159681 -0.86349,0.159681 h -6.79908 c -0.028,0 -1.1313,-0.0032 -1.15911,-0.0041 h -0.29816 l 2.56728,4.021976 h 4.87928 l 2.73008,4.821928 5.44875,0.02585 -3.73877,-5.652884 c 1.74725,-0.941009 3.06165,-2.39803 3.02926,-6.253882 -0.0467,-5.540957 -4.38687,-5.938713 -6.6244,-5.951575 z m 86.02678,0 c -0.31967,-0.0019 -0.59613,0.0041 -0.81132,0.0041 H 308.96622 V 94.34936 h 4.24109 l 0.0103,-4.847767 v -8.891958 h 0.23254 v 5.29e-4 h 9.36739 c 0.0148,0 0.0277,0.0013 0.0424,0.0016 h 0.11525 c 0.16727,0 0.33022,0.01678 0.48781,0.04857 0.005,0.0011 0.01,0.0021 0.0151,0.0031 0.50729,0.08912 0.86537,0.288208 1.11673,0.565341 0.50035,0.445532 0.81648,1.093245 0.81648,1.81901 0,0.94315 -0.53131,1.755976 -1.31154,2.161109 -0.0429,0.0232 -0.0883,0.04376 -0.13386,0.06408 -0.0185,0.0082 -0.0366,0.01707 -0.0553,0.02479 -0.0233,0.0096 -0.0479,0.01754 -0.0718,0.02635 -0.26858,0.101407 -0.55864,0.159681 -0.86352,0.159681 h -6.79908 c -0.0281,0 -1.1313,-0.0032 -1.15909,-0.0041 h -0.29818 l 2.56728,4.021976 h 4.87928 l 2.73008,4.821928 5.44875,0.02585 -3.73877,-5.652884 c 1.74728,-0.941009 3.06165,-2.39803 3.02926,-6.253882 -0.0467,-5.540957 -4.38689,-5.938713 -6.6244,-5.951575 z m -77.29916,0.06666 v 4.223515 13.568164 h 4.22352 9.58339 l 2.99257,-4.223515 H 249.93469 V 80.78123 h 12.14602 v -4.223515 h -12.14602 z m 96.93206,3.385839 c 1.24916,0.01241 2.45454,0.07995 3.64578,0.165883 1.46272,0.105516 2.44816,1.103333 2.64842,2.445329 0.21855,1.804525 0.22363,3.787852 0,5.323705 -0.20026,1.341993 -1.1857,2.339814 -2.64842,2.44533 -2.38247,0.17186 -4.82211,0.271176 -7.55354,0 -1.45881,-0.144831 -2.38826,-1.112131 -2.64842,-2.44533 -0.20376,-1.801717 -0.30938,-3.68655 0,-5.323705 0.26016,-1.333201 1.18961,-2.300499 2.64842,-2.445329 1.3657,-0.135589 2.65861,-0.178295 3.90776,-0.165883 z m -90.54898,3.782716 v 3.24063 h 8.17623 v -3.24063 z" />
+            </g>
+        </svg>
+
+        <div class="spinner-area">
+            <div class="spinner"></div>
+            <span class="loading-text">LOADING</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const starContainer = document.getElementById('star-container');
+            const numStars = 100;
+
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star-particle');
+
+                // 1. Size
+                const size = (Math.random() * 2.5 + 1) + 'px';
+                star.style.width = size;
+                star.style.height = size;
+
+                // 2. Starting Position
+                star.style.left = (Math.random() * 100) + '%';
+                star.style.top = (Math.random() * 100) + '%';
+
+                // 3. Movement Direction (CSS Variables)
+                // Randomly drift between -150px and +150px in X and Y
+                const moveX = (Math.random() * 300 - 150) + 'px'; 
+                const moveY = (Math.random() * 300 - 150) + 'px';
+                star.style.setProperty('--moveX', moveX);
+                star.style.setProperty('--moveY', moveY);
+
+                // 4. Timing
+                // Twinkle speed (2s - 6s)
+                const duration = (Math.random() * 4 + 2) + 's';
+                // Movement speed (slower: 15s - 30s)
+                const moveDuration = (Math.random() * 15 + 15) + 's';
+                // Delay so they don't start together
+                const delay = (Math.random() * 5) + 's';
+
+                star.style.setProperty('--duration', duration);
+                star.style.setProperty('--move-duration', moveDuration);
+                star.style.setProperty('--delay', delay);
+                
+                starContainer.appendChild(star);
+            }
+        });
+    </script>
+
+</body>
+</html>
