@@ -26,7 +26,7 @@ Use this button to turn haptics ON or OFF:
 
 <img width="80" height="78" alt="image" src="https://github.com/user-attachments/assets/3137d610-f2c5-4ce2-863e-e3446e1375b6" />
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<hr>
 <strong>Install Requirements</strong>
 <ol>
   <li>Node.js + npm</li>
