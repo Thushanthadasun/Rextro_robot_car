@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Pro Robot Controller</title>
+    <style>
+        /* --- GLOBAL RESET --- */ * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #000000;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        
+        #loader-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: transparent; 
+            z-index: 9999; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-out;
+            pointer-events: none; /* Allows click-through after fade */
+        }
+
+        .loader-container {
+            text-align: center;
+            position: relative;
+            z-index: 100;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .loader-svg {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+        }
+
+        /* Logo Animation */
+        .logo-anim {
+            fill-opacity: 0;
+            stroke: #ffffff;
+            stroke-width: 0.3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 4000;
+            stroke-dashoffset: 4000;
+            /* CHANGED: 12s (Slightly slower than original 10s, but faster than 15s) */
+            animation: fullCycle 12s ease-in-out infinite;
+        }
+
+        @keyframes fullCycle {
+            0% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+            60% { stroke-dashoffset: 0; fill-opacity: 0; stroke: #ffffff; }
+            60% { stroke-dashoffset: 0; fill-opacity: 1; stroke: transparent; }
+            80% { stroke-dashoffset: 0; fill-opacity: 0; stroke: #ffffff; }
+            80% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+            100% { stroke-dashoffset: 4000; fill-opacity: 0; stroke: #ffffff; }
+        }
+
+        .path-center { fill: url(#linearGradient16); }
+        .path-text { fill: url(#linearGradient17); }
+
+        /* Spinner */
+        .spinner-area {
+            margin-top: 40px;
+            opacity: 0;
+            animation: fadeInOut 8s ease-in-out infinite;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px dotted rgba(255, 255, 255, 0.2);
+            border-top: 4px dotted #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+        .loading-text {
+            display: block; margin-top: 15px; font-size: 14px;
+            letter-spacing: 5px; color: #666; font-family: 'Arial Black', sans-serif;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInOut { 0%, 100% { opacity: 0; } 20%, 80% { opacity: 1; } }
+
+        
+        .background-stars {
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            z-index: 1; 
+            opacity: 0.3; 
+            overflow: hidden;
+            pointer-events: none; 
+        }
+
+        .star-particle {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #fff, 0 0 6px rgba(255, 255, 255, 0.4);
+            opacity: 0; 
+            animation: 
+                twinkle var(--duration) ease-in-out infinite var(--delay),
+                drift var(--move-duration) ease-in-out infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(var(--moveX), var(--moveY)); }
+        }
+
+        /* =========================================
+           3. MAIN APP CONTAINER
+           ========================================= */
+        #app-container {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10; 
+            opacity: 0; /* Start hidden */
+            transition: opacity 1s ease-in;
+        }
+
+        /* HEADER */
+        .header { background: transparent; padding: 10px; text-align: center; flex-shrink: 0; }
+        .header h1 { font-size: clamp(16px, 5vw, 20px); font-weight: 700; letter-spacing: 1px; }
+
+        /* DEBUG CONSOLE */
+        #debugConsole {
+            position: absolute; top: 50px; left: 10px; 
+            font-size: 10px; color: #0f0; font-family: monospace;
+            pointer-events: none; z-index: 50; opacity: 0.7;
+        }
+
+        /* CONNECTION PANEL */
+        .connection-panel {
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            margin: 10px;
+            border-radius: 12px;
+            flex-shrink: 0; 
+            z-index: 30;
+        }
+        .btn {
+            background: #00d2ff; color: #000; border: none;
+            padding: 12px; font-weight: bold; border-radius: 8px;
+            width: 100%; cursor: pointer; text-transform: uppercase;
+        }
+        .btn:active { opacity: 0.8; transform: scale(0.98); }
+        .btn.disconnect { background: #ff4444; color: white; }
+        .hidden { display: none !important; }
+
+        .device-list { margin-top: 5px; max-height: 100px; overflow-y: auto; }
+        .device-item { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+
+        /* CONTROLS AREA */
+        .controls-area { flex: 1; position: relative; width: 100%; overflow: hidden; }
+        
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* MODE BUTTONS */
+        .mode-toggles {
+            position: absolute; top: 2vh; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 10;
+            justify-content: center;
+        }
+        .mode-btn {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; padding: 8px 16px; border-radius: 20px;
+            font-size: clamp(10px, 3.5vw, 14px);
+        }
+        .mode-btn.active { background: #00d2ff; color: #000; border-color: #00d2ff; }
+
+        /* CALIBRATION BUTTON */
+        .cal-btn {
+            position: absolute; top: 8vh; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 255, 136, 0.2); border: 1px solid #00ff88;
+            color: #00ff88; padding: 5px 12px; border-radius: 15px; font-size: 10px;
+            z-index: 10; cursor: pointer;
+        }
+        .cal-btn:active { background: #00ff88; color: #000; }
+
+        /* HUD LAYER */
+        .hud-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 20;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 4vw; 
+        }
+
+        .data-box { font-family: monospace; text-shadow: 1px 1px 2px #000; }
+        .data-box .label { font-size: clamp(9px, 2.5vw, 11px); color: #aaa; margin-bottom: 2px; text-transform: uppercase; }
+        .data-box .value { font-size: clamp(12px, 4vw, 18px); font-weight: bold; margin-bottom: 4px; }
+
+        .hud-top-right { align-self: flex-end; text-align: right; margin-top: 60px; }
+        .hud-bottom-left { align-self: flex-start; text-align: left; margin-bottom: 10px; }
+
+        /* STOP BUTTON */
+        .emergency-stop {
+            position: absolute; bottom: 4vh; right: 5vw;
+            width: clamp(70px, 15vmin, 80px); height: clamp(70px, 15vmin, 80px);
+            background: radial-gradient(circle, #ff4444 0%, #cc0000 100%);
+            border: 3px solid white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 100;
+            font-size: clamp(11px, 3.5vmin, 14px);
+            transition: all 0.2s;
+        }
+        .emergency-stop:active { transform: scale(0.95); }
+
+        .emergency-stop.stop-active {
+            background: #ff0000; box-shadow: 0 0 25px rgba(255, 0, 0, 1); border-color: #ffff00;
+            color: white; transform: scale(1.1); animation: pulse-stop 1s infinite;
+        }
+
+        @keyframes pulse-stop {
+            0% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.8); }
+            50% { box-shadow: 0 0 35px rgba(255, 0, 0, 1); }
+            100% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.8); }
+        }
+
+        /* --- HEADLIGHT BUTTON --- */
+        .headlight-btn {
+            position: absolute; bottom: calc(4vh + clamp(70px, 15vmin, 90px) + 20px); right: 6vw;
+            width: clamp(45px, 10vmin, 50px); height: clamp(45px, 10vmin, 50px);
+            background: rgba(255, 255, 0, 0.15); border: 2px solid #ff0; border-radius: 50%;
+            color: #ff0; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.2); z-index: 90; transition: all 0.2s;
+        }
+        .headlight-btn.active-light { background: rgba(255, 255, 0, 0.9); color: #000; box-shadow: 0 0 25px rgba(255, 255, 0, 0.8); transform: scale(1.05); }
+        .headlight-btn svg { fill: currentColor; pointer-events: none; width: 55%; height: 55%; }
+
+        /* --- HAZARD INDICATOR (PASSIVE) --- */
+        .hazard-btn {
+            position: absolute; bottom: calc(4vh + clamp(70px, 15vmin, 90px) + 20px); left: 6vw; 
+            width: clamp(45px, 10vmin, 50px); height: clamp(45px, 10vmin, 50px);
+            background: rgba(255, 100, 0, 0.15); border: 2px solid #ff4400; border-radius: 50%;
+            color: #ff4400; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px rgba(255, 68, 0, 0.2); z-index: 90; transition: all 0.2s;
+            pointer-events: none; /* INDICATOR ONLY - NO CLICKS */
+        }
+        .hazard-btn svg { fill: currentColor; pointer-events: none; width: 55%; height: 55%; }
+        @keyframes blink-hazard {
+            0%, 100% { background: rgba(255, 0, 0, 0.9); box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); border-color: #fff; color: #fff; transform: scale(1.1); }
+            50% { background: rgba(255, 0, 0, 0.2); box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); border-color: #ff4400; color: #ff4400; transform: scale(1); }
+        }
+        .hazard-active { animation: blink-hazard 0.6s infinite; }
+
+
+        /* --- HAPTIC BUTTON --- */
+        .haptic-btn {
+            position: absolute; bottom: calc(4vh + clamp(70px, 15vmin, 90px) + 20px + clamp(45px, 10vmin, 50px) + 15px); right: 6vw;
+            width: clamp(45px, 10vmin, 25px); height: clamp(45px, 10vmin, 25px);
+            background: rgba(255, 255, 255, 0.1); border: 2px solid #aaa; border-radius: 50%;
+            color: #aaa; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5); z-index: 90; transition: all 0.2s;
+        }
+        .haptic-btn.active-haptic { background: rgba(0, 255, 136, 0.8); color: #000; border-color: #00ff88; box-shadow: 0 0 15px rgba(0, 255, 136, 0.6); }
+        .haptic-btn svg { fill: currentColor; pointer-events: none; width: 60%; height: 60%; }
+
+        /* --- LANDSCAPE --- */
+        @media (orientation: landscape) {
+            .header { display: none; }
+            .connection-panel { position: absolute; top: 5px; left: 10px; width: 160px; margin: 0; padding: 0; background: transparent; border: none; z-index: 50; }
+            .connection-panel .btn { padding: 8px; font-size: 11px; background: rgba(0, 210, 255, 0.3); border: 1px solid rgba(0, 210, 255, 0.5); color: #fff; }
+            .controls-area { width: 100%; height: 100vh; position: absolute; top: 0; left: 0; }
+            .mode-toggles { top: 10px; left: 50%; transform: translateX(-50%); width: auto; gap: 25px; justify-content: center; }
+            .cal-btn { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200; padding: 10px 20px; background: rgba(0, 255, 136, 0.3); }
+            .hud-layer { padding: 15px; }
+            .hud-top-right { margin-top: 5px; margin-right: 5px; }
+            .hud-bottom-left { margin-bottom: 5px; margin-left: 5px; }
+            .emergency-stop { right: 20px; bottom: 20px; width: 80px; height: 80px; }
+            .headlight-btn { right: 120px; bottom: 35px; width: 50px; height: 50px; }
+            .haptic-btn { right: 120px; bottom: 95px; width: 50px; height: 50px; } 
+            .hazard-btn { left: 120px; bottom: 35px; width: 50px; height: 50px; }
+            .device-list { background: rgba(0,0,0,0.8); border-radius: 5px; max-height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="background-stars" id="star-container"></div>
+
+    <div id="loader-overlay">
+        <div class="loader-container">
+            <svg class="loader-svg" viewBox="0 0 291.04165 158.75002" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <defs>
+                    <linearGradient id="linearGradient938">
+                        <stop style="stop-color:#d40000" offset="0" />
+                        <stop style="stop-color:#000080" offset="1" />
+                    </linearGradient>
+                    <linearGradient inkscape:collect="always" id="linearGradient6993-1">
+                        <stop style="stop-color:#002255;stop-opacity:1;" offset="0" />
+                        <stop style="stop-color:#0044aa;stop-opacity:1" offset="0.45" />
+                        <stop style="stop-color:#213f6b;stop-opacity:1" offset="1" />
+                    </linearGradient>
+                    <linearGradient inkscape:collect="always" xlink:href="#linearGradient938" id="linearGradient16" gradientUnits="userSpaceOnUse" x1="249" y1="86" x2="365" y2="86" />
+                    <linearGradient inkscape:collect="always" xlink:href="#linearGradient6993-1" id="linearGradient17" gradientUnits="userSpaceOnUse" x1="222" y1="85" x2="353" y2="85" />
+                </defs>
+
+                <g transform="matrix(1.4056,0,0,1.4056,-259.6036,-42.986385)">
+                    <path class="logo-anim path-center" d="m 274.62014,69.680964 -13.8414,1.47e-4 9.81458,15.350572 -10.62924,15.001657 h 11.27568 l 7.08769,-10.02707 v 10.02707 h 13.96074 l -9.98836,-15.646865 v -9.18e-4 l 10.41742,-14.704631 h -11.27477 l -6.82234,9.654203 z" />
+                    <path class="logo-anim path-text" d="m 291.76468,76.162907 -2.99257,4.223514 h 7.12462 v 13.898893 h 4.22352 V 80.386421 h 6.60889 v -4.223514 z m 50.78037,0.124542 c -2.02769,0.0063 -4.06617,0.09379 -6.11331,0.243911 -2.58302,0.189413 -4.4256,1.937433 -4.67725,4.318601 -0.18375,2.988579 -0.2835,5.964316 0,8.733316 0.25165,2.381165 2.09423,4.12919 4.67725,4.318598 2.04714,0.150122 4.08562,0.237646 6.11331,0.243914 2.02769,0.0063 4.04458,-0.0687 6.04768,-0.243914 2.57967,-0.225624 4.3873,-1.941148 4.67726,-4.318598 0.29236,-2.989517 0.33094,-5.955107 0,-8.733316 -0.28993,-2.377454 -2.09759,-4.092975 -4.67726,-4.318601 -2.0031,-0.175204 -4.01999,-0.250185 -6.04768,-0.243911 z m -105.5615,0.203604 c -0.31964,-0.0019 -0.59616,0.0041 -0.81132,0.0041 H 222.93944 V 94.34936 h 4.24108 l 0.0103,-4.847767 v -8.891958 h 0.23257 v 5.29e-4 h 9.36739 c 0.0148,0 0.0277,0.0013 0.0424,0.0016 h 0.11525 c 0.16725,0 0.3302,0.01678 0.48781,0.04857 0.005,0.0011 0.0101,0.0021 0.0151,0.0031 0.50731,0.08912 0.86539,0.288208 1.11672,0.565341 0.50036,0.445534 0.81651,1.093245 0.81651,1.81901 0,0.94315 -0.53131,1.755979 -1.31154,2.161109 -0.0429,0.0232 -0.0883,0.04376 -0.13386,0.06408 -0.0185,0.0082 -0.0366,0.01709 -0.0553,0.02479 -0.0233,0.0096 -0.0479,0.01754 -0.0718,0.02635 -0.26852,0.101404 -0.55861,0.159681 -0.86349,0.159681 h -6.79908 c -0.028,0 -1.1313,-0.0032 -1.15911,-0.0041 h -0.29816 l 2.56728,4.021976 h 4.87928 l 2.73008,4.821928 5.44875,0.02585 -3.73877,-5.652884 c 1.74725,-0.941009 3.06165,-2.39803 3.02926,-6.253882 -0.0467,-5.540957 -4.38687,-5.938713 -6.6244,-5.951575 z m 86.02678,0 c -0.31967,-0.0019 -0.59613,0.0041 -0.81132,0.0041 H 308.96622 V 94.34936 h 4.24109 l 0.0103,-4.847767 v -8.891958 h 0.23254 v 5.29e-4 h 9.36739 c 0.0148,0 0.0277,0.0013 0.0424,0.0016 h 0.11525 c 0.16727,0 0.33022,0.01678 0.48781,0.04857 0.005,0.0011 0.01,0.0021 0.0151,0.0031 0.50729,0.08912 0.86537,0.288208 1.11673,0.565341 0.50035,0.445532 0.81648,1.093245 0.81648,1.81901 0,0.94315 -0.53131,1.755976 -1.31154,2.161109 -0.0429,0.0232 -0.0883,0.04376 -0.13386,0.06408 -0.0185,0.0082 -0.0366,0.01707 -0.0553,0.02479 -0.0233,0.0096 -0.0479,0.01754 -0.0718,0.02635 -0.26858,0.101407 -0.55864,0.159681 -0.86352,0.159681 h -6.79908 c -0.0281,0 -1.1313,-0.0032 -1.15909,-0.0041 h -0.29818 l 2.56728,4.021976 h 4.87928 l 2.73008,4.821928 5.44875,0.02585 -3.73877,-5.652884 c 1.74728,-0.941009 3.06165,-2.39803 3.02926,-6.253882 -0.0467,-5.540957 -4.38689,-5.938713 -6.6244,-5.951575 z m -77.29916,0.06666 v 4.223515 13.568164 h 4.22352 9.58339 l 2.99257,-4.223515 H 249.93469 V 80.78123 h 12.14602 v -4.223515 h -12.14602 z m 96.93206,3.385839 c 1.24916,0.01241 2.45454,0.07995 3.64578,0.165883 1.46272,0.105516 2.44816,1.103333 2.64842,2.445329 0.21855,1.804525 0.22363,3.787852 0,5.323705 -0.20026,1.341993 -1.1857,2.339814 -2.64842,2.44533 -2.38247,0.17186 -4.82211,0.271176 -7.55354,0 -1.45881,-0.144831 -2.38826,-1.112131 -2.64842,-2.44533 -0.20376,-1.801717 -0.30938,-3.68655 0,-5.323705 0.26016,-1.333201 1.18961,-2.300499 2.64842,-2.445329 1.3657,-0.135589 2.65861,-0.178295 3.90776,-0.165883 z m -90.54898,3.782716 v 3.24063 h 8.17623 v -3.24063 z" />
+                </g>
+            </svg>
+
+            <div class="spinner-area">
+                <div class="spinner"></div>
+                <span class="loading-text">LOADING</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <div class="header">
+            <h1>ROBOT LINK</h1>
+        </div>
+        
+        <div id="debugConsole"></div>
+
+        <div class="connection-panel">
+            <button id="scanBtn" class="btn">Scan</button>
+            <button id="disconnectBtn" class="btn disconnect hidden">Disconnect</button>
+            <div id="status" style="margin-top:5px; font-size:12px; color:#aaa;">Ready</div>
+            <div id="deviceList" class="device-list"></div>
+        </div>
+
+        <div class="controls-area">
+            <div class="mode-toggles">
+                <button class="mode-btn active" onclick="setMode('tilt')">TILT</button>
+                <button class="mode-btn" onclick="setMode('joy')">JOY</button>
+                <button class="mode-btn" onclick="setMode('LED')">LED</button>
+            </div>
+
+            <button id="calBtn" class="cal-btn">SET ZERO</button>
+            
+            <canvas id="controlCanvas"></canvas>
+
+            <div id="colorModePanel" class="hidden" style="position: absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background: transparent; z-index: 5;">
+                 <h3 style="margin-bottom: 20px;">LED COLOR</h3>
+                 <canvas id="colorCanvas" width="300" height="300" style="width:300px; height:300px; flex:none;"></canvas>
+                 <div id="selectedColorPreview" style="margin-top:20px; width:50px; height:50px; border-radius:50%; border: 2px solid #fff;"></div>
+            </div>
+
+            <div id="hapticBtn" class="haptic-btn active-haptic">
+                <svg viewBox="0 0 24 24">
+                    <path d="M0 15h2V9H0v6zm3 2h2V7H3v10zm19-8v6h2V9h-2zm-3 8h2V7h-2v10zM16.5 3h-9C6.67 3 5.25 4.42 5.25 6.17v11.66C5.25 19.58 6.67 21 7.5 21h9c.83 0 2.25-1.42 2.25-3.17V6.17C18.75 4.42 17.33 3 16.5 3zm-1.5 16h-6v-1h6v1zm0-2h-6v-1h6v1zm0-12h-6v-1h6v1z"/>
+                </svg>
+            </div>
+
+            <div id="headLightBtn" class="headlight-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C7.59 2 4 5.59 4 10V22H20V10C20 5.59 16.41 2 12 2M12 4C14.21 4 16.13 5.35 17.15 7.23L15.34 8.14C14.71 6.87 13.45 6 12 6C10.55 6 9.29 6.87 8.66 8.14L6.85 7.23C7.87 5.35 9.79 4 12 4M9 12H15V14H9V12M9 15H15V17H9V15M9 18H15V20H9V18Z" />
+                </svg>
+            </div>
+            
+            <div id="hazardBtn" class="hazard-btn">
+                <svg viewBox="0 0 24 24">
+                   <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM13 16v2h-2v-2h2zm-2-6h2v4h-2v-4z"/>
+                </svg>
+            </div>
+
+            <div class="hud-layer">
+                <div class="data-box hud-top-right">
+                    <div class="label">SENSORS</div>
+                    <div class="value" style="color: #00ffff;">DIST: <span id="distVal">--</span> cm</div>
+                    <div class="value" style="color: #ffaa00;">TEMP: <span id="tempVal">--</span> °C</div>
+                </div>
+                <div class="data-box hud-bottom-left">
+                    <div class="label">OUTPUT</div>
+                    <div class="value">FWD: <span id="fwdVal">0</span></div>
+                    <div class="value">TRN: <span id="turnVal">0</span></div>
+                </div>
+            </div>
+
+            <button class="emergency-stop" id="stopBtn">STOP</button>
+        </div>
+    </div>
+
+    <script src="cordova.js"></script>
+    <script>
+        // --- STARTUP ANIMATION LOGIC ---
+        function generateStars() {
+            const starContainer = document.getElementById('star-container');
+            const numStars = 100;
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star-particle');
+                const size = (Math.random() * 2.5 + 1) + 'px';
+                star.style.width = size; star.style.height = size;
+                star.style.left = (Math.random() * 100) + '%';
+                star.style.top = (Math.random() * 100) + '%';
+                const moveX = (Math.random() * 300 - 150) + 'px'; 
+                const moveY = (Math.random() * 300 - 150) + 'px';
+                star.style.setProperty('--moveX', moveX);
+                star.style.setProperty('--moveY', moveY);
+                star.style.setProperty('--duration', (Math.random() * 4 + 2) + 's');
+                star.style.setProperty('--move-duration', (Math.random() * 15 + 15) + 's');
+                star.style.setProperty('--delay', (Math.random() * 5) + 's');
+                starContainer.appendChild(star);
+            }
+        }
+
+        function hideSplashScreen() {
+            // CHANGED: 5000ms (5 seconds) - Exactly one second longer than original
+            setTimeout(() => {
+                const loader = document.getElementById('loader-overlay');
+                const app = document.getElementById('app-container');
+                
+                // Fade out loader, Fade in App
+                loader.style.opacity = '0';
+                app.style.opacity = '1';
+                
+                // Remove loader from DOM after transition
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    // NOTE: Do not clear star-container HTML so stars persist
+                }, 1000);
+            }, 5000); 
+        }
+
+        // --- APP LOGIC ---
+        const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+        const CHAR_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+        const SEND_INTERVAL = 30; 
+        const DEADZONE = 10; 
+        const HAZARD_DIST = 2; 
+        const HEARTBEAT_INTERVAL = 200; 
+        const MOTOR_SMOOTHING = 0.6;    
+        const VISUAL_SMOOTHING = 0.4;  
+
+        let connectedDeviceId = null;
+        let currentMode = 'tilt'; 
+        let joyActive = false;
+        let ledState = { r: 0, g: 0, b: 0 };
+        let lightState = 0; 
+        let autoHazard = false;
+        let controlState = { fwd: 0, turn: 0 };
+        let visualState = { fwd: 0, turn: 0 }; 
+        let isStopped = false; 
+        let hapticEnabled = true;
+
+        let lastSentFwd = null;
+        let lastSentTurn = null;
+        let lastSentLight = null;
+        let lastSentLed = null;
+        let lastTxTime = 0;
+
+        let currentTiltOffset = 0; 
+        let lastBetaValue = 0;
+        let lastGammaValue = 0;
+        let smoothFwd = 0;
+        let smoothTurn = 0;
+        
+        let wasMaxed = false;
+        let wasZeroed = true;
+
+        const canvas = document.getElementById('controlCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, centerX, centerY, maxRadius;
+
+        document.addEventListener('deviceready', initApp, false);
+        if (typeof cordova === 'undefined') setTimeout(initApp, 100);
+
+        function initApp() {
+            // 1. Force native splash screen to hide instantly
+            if(navigator.splashscreen) {
+                navigator.splashscreen.hide();
+            }
+
+            // 2. Start our custom animation
+            generateStars();
+            hideSplashScreen();
+
+            // 3. Keep Awake & Init Listeners
+            if (window.plugins && window.plugins.insomnia) window.plugins.insomnia.keepAwake();
+            resize();
+            window.addEventListener('resize', resize);
+            window.addEventListener('orientationchange', () => { setTimeout(resize, 200); });
+            
+            document.getElementById('scanBtn').addEventListener('click', startScan);
+            document.getElementById('disconnectBtn').addEventListener('click', disconnect);
+            
+            const stopBtn = document.getElementById('stopBtn');
+            stopBtn.addEventListener('touchstart', (e) => { e.preventDefault(); emergencyStop(); });
+            stopBtn.addEventListener('click', (e) => { emergencyStop(); });
+
+            const lightBtn = document.getElementById('headLightBtn');
+            lightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); toggleLight(); });
+            lightBtn.addEventListener('click', (e) => { toggleLight(); });
+            
+            const hapticBtn = document.getElementById('hapticBtn');
+            hapticBtn.addEventListener('touchstart', (e) => { e.preventDefault(); toggleHaptic(); });
+            hapticBtn.addEventListener('click', (e) => { toggleHaptic(); });
+
+            const calBtn = document.getElementById('calBtn');
+            calBtn.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                calibrateTilt(); 
+            });
+            calBtn.addEventListener('click', calibrateTilt);
+
+            canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+            canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+            
+            window.addEventListener('deviceorientation', handleOrientation);
+
+            setInterval(transmitData, SEND_INTERVAL);
+            drawLoop();
+        }
+
+        // --- HAPTIC TOGGLE LOGIC ---
+        function toggleHaptic() {
+            hapticEnabled = !hapticEnabled;
+            const btn = document.getElementById('hapticBtn');
+            if(hapticEnabled) {
+                btn.classList.add('active-haptic');
+                triggerVibrate('click'); 
+            } else {
+                btn.classList.remove('active-haptic');
+            }
+        }
+
+        function triggerVibrate(type) {
+            if (!hapticEnabled) return; 
+            if (window.plugins && window.plugins.hapticFeedback) {
+                if (type === 'click') window.plugins.hapticFeedback.selection(); 
+                else if (type === 'zero') window.plugins.hapticFeedback.impactLight(); 
+                else if (type === 'limit') window.plugins.hapticFeedback.impactHeavy(); 
+                else if (type === 'heavy') window.plugins.hapticFeedback.notificationError(); 
+                return;
+            }
+            if (!navigator.vibrate) return;
+            if (type === 'click') navigator.vibrate(3); 
+            else if (type === 'zero') navigator.vibrate(5); 
+            else if (type === 'limit') navigator.vibrate(12); 
+            else if (type === 'heavy') navigator.vibrate([30, 50, 30]); 
+        }
+
+        function handleHaptics(fwd, turn) {
+            const isMax = Math.abs(fwd) >= 100 || Math.abs(turn) >= 100;
+            const isZero = fwd === 0 && turn === 0;
+
+            if (isMax && !wasMaxed) { triggerVibrate('limit'); wasMaxed = true; }
+            else if (!isMax) wasMaxed = false;
+
+            if (isZero && !wasZeroed) { triggerVibrate('zero'); wasZeroed = true; }
+            else if (!isZero) wasZeroed = false;
+        }
+
+        function calibrateTilt() {
+            if (currentMode !== 'tilt') return;
+            const angle = getOrientation();
+            if (angle === 0 || angle === 360) currentTiltOffset = lastBetaValue;
+            else currentTiltOffset = lastGammaValue;
+            
+            smoothFwd = 0;
+            smoothTurn = 0;
+            visualState = { fwd: 0, turn: 0 };
+
+            const btn = document.getElementById('calBtn');
+            const oldText = btn.innerText;
+            btn.innerText = "ZERO SET!";
+            triggerVibrate('click');
+            setTimeout(() => btn.innerText = oldText, 1000);
+        }
+
+        function emergencyStop() {
+            isStopped = !isStopped;
+            const btn = document.getElementById('stopBtn');
+
+            if (isStopped) {
+                controlState = { fwd: 0, turn: 0 };
+                smoothFwd = 0; smoothTurn = 0;
+                btn.classList.add('stop-active');
+                btn.innerText = "RESUME";
+                setStatus("!!! SYSTEM HALTED !!!");
+                transmitData(); 
+                triggerVibrate('heavy');
+            } else {
+                btn.classList.remove('stop-active');
+                btn.innerText = "STOP";
+                setStatus("System Resumed");
+                triggerVibrate('click');
+            }
+            updateUI();
+        }
+
+        function transmitData() {
+            if (!connectedDeviceId) return;
+            
+            let sendFwd = isStopped ? 0 : controlState.fwd;
+            let sendTurn = isStopped ? 0 : controlState.turn;
+            
+            let sendR = ledState.r;
+            let sendG = ledState.g;
+            let sendB = ledState.b;
+
+            if (autoHazard) {
+                if (Math.floor(Date.now() / 300) % 2 === 0) {
+                    sendR = 255; sendG = 0; sendB = 0; 
+                } else {
+                    sendR = 0; sendG = 0; sendB = 0;   
+                }
+            }
+
+            let ledSig = `${sendR},${sendG},${sendB}`;
+            let now = Date.now();
+            let hasChanged = false;
+
+            if (sendFwd !== lastSentFwd || sendTurn !== lastSentTurn || lightState !== lastSentLight || ledSig !== lastSentLed) {
+                hasChanged = true;
+            }
+
+            if (!hasChanged && (now - lastTxTime < HEARTBEAT_INTERVAL)) {
+                return; 
+            }
+
+            lastSentFwd = sendFwd;
+            lastSentTurn = sendTurn;
+            lastSentLight = lightState;
+            lastSentLed = ledSig;
+            lastTxTime = now;
+
+            const buffer = new ArrayBuffer(7);
+            const dataView = new DataView(buffer);
+            dataView.setUint8(0, 0xFF);             
+            dataView.setInt8(1, sendFwd);       
+            dataView.setInt8(2, sendTurn);   
+            dataView.setUint8(3, sendR);       
+            dataView.setUint8(4, sendG);        
+            dataView.setUint8(5, sendB);        
+            dataView.setUint8(6, lightState);        
+            
+            ble.writeWithoutResponse(connectedDeviceId, SERVICE_UUID, CHAR_UUID, buffer, () => {}, (e) => {});
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = canvas.parentElement.offsetHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+            maxRadius = Math.min(width, height) / 2 - (Math.min(width,height)*0.15);
+        }
+
+        function getOrientation() {
+            if (screen.orientation && screen.orientation.angle != null) return screen.orientation.angle;
+            else if (window.orientation != null) return window.orientation;
+            return 0;
+        }
+
+        function handleOrientation(e) {
+            if (e.beta !== null) lastBetaValue = e.beta;
+            if (e.gamma !== null) lastGammaValue = e.gamma;
+            
+            if (currentMode !== 'tilt') return;
+            
+            let targetFwdInput = 0; 
+            let targetTurnInput = 0;
+            const angle = getOrientation();
+
+            switch(angle) {
+                case 0: case 360: 
+                    targetFwdInput = (lastBetaValue - currentTiltOffset); 
+                    targetTurnInput = lastGammaValue; 
+                    break;
+                case 90: 
+                    targetFwdInput = -(lastGammaValue - currentTiltOffset); 
+                    targetTurnInput = lastBetaValue; 
+                    break;
+                case -90: case 270: 
+                    targetFwdInput = (lastGammaValue - currentTiltOffset); 
+                    targetTurnInput = -lastBetaValue; 
+                    break;
+                case 180: 
+                    targetFwdInput = -(lastBetaValue + currentTiltOffset); 
+                    targetTurnInput = -lastGammaValue; 
+                    break;
+            }
+
+            let rawFwdVal = Math.max(-100, Math.min(100, targetFwdInput * 4)); 
+            let rawTurnVal = Math.max(-100, Math.min(100, targetTurnInput * 2));
+
+            let lockedVisualFwd = applyDeadzone(rawFwdVal);
+            let lockedVisualTurn = applyDeadzone(rawTurnVal);
+
+            visualState.fwd = visualState.fwd + VISUAL_SMOOTHING * (lockedVisualFwd - visualState.fwd);
+            visualState.turn = visualState.turn + VISUAL_SMOOTHING * (lockedVisualTurn - visualState.turn);
+
+            smoothFwd = smoothFwd + MOTOR_SMOOTHING * (rawFwdVal - smoothFwd);
+            smoothTurn = smoothTurn + MOTOR_SMOOTHING * (rawTurnVal - smoothTurn);
+
+            controlState.fwd = Math.round(applyDeadzone(smoothFwd));
+            controlState.turn = Math.round(applyDeadzone(smoothTurn));
+            
+            handleHaptics(controlState.fwd, controlState.turn);
+            updateUI();
+        }
+
+        function toggleLight() {
+            lightState = (lightState === 0) ? 1 : 0;
+            const btn = document.getElementById('headLightBtn');
+            if (lightState === 1) btn.classList.add('active-light');
+            else btn.classList.remove('active-light');
+            triggerVibrate('click');
+        }
+
+        function updateHazardUI() {
+            const btn = document.getElementById('hazardBtn');
+            if (autoHazard) {
+                btn.classList.add('hazard-active');
+            } else {
+                btn.classList.remove('hazard-active');
+            }
+        }
+
+        function startScan() {
+            triggerVibrate('click');
+            if (typeof ble === 'undefined') { log("BLE missing"); return; }
+            setStatus("Scanning...");
+            document.getElementById('deviceList').innerHTML = '';
+            ble.startScan([], (device) => { if(device.name) addDeviceToList(device); }, (err) => log("Scan Error"));
+            setTimeout(() => { ble.stopScan(() => setStatus("Done"), () => {}); }, 5000);
+        }
+
+        function addDeviceToList(device) {
+            const list = document.getElementById('deviceList');
+            if(document.getElementById(device.id)) return;
+            const el = document.createElement('div');
+            el.className = 'device-item';
+            el.id = device.id;
+            el.innerHTML = `<b>${device.name}</b><br><small>${device.id}</small>`;
+            el.onclick = () => connectToDevice(device);
+            list.appendChild(el);
+        }
+
+        function connectToDevice(device) {
+            triggerVibrate('click');
+            setStatus("Connecting...");
+            ble.connect(device.id, (r) => {
+                connectedDeviceId = device.id;
+                setStatus("Connected");
+                
+                smoothFwd = 0; smoothTurn = 0;
+                controlState = { fwd: 0, turn: 0 };
+                visualState = { fwd: 0, turn: 0 };
+                autoHazard = false;
+                updateHazardUI();
+
+                if(currentMode === 'tilt') calibrateTilt();
+
+                document.getElementById('scanBtn').classList.add('hidden');
+                document.getElementById('deviceList').innerHTML = '';
+                document.getElementById('disconnectBtn').classList.remove('hidden');
+                triggerVibrate('click');
+                ble.startNotification(device.id, SERVICE_UUID, CHAR_UUID, handleIncomingData, (e) => log("Notify Err"));
+            }, (err) => { setStatus("Failed"); connectedDeviceId = null; });
+        }
+
+        function disconnect() {
+            triggerVibrate('click');
+            if (connectedDeviceId) {
+                ble.disconnect(connectedDeviceId, () => {
+                    connectedDeviceId = null;
+                    setStatus("Disconnected");
+                    document.getElementById('scanBtn').classList.remove('hidden');
+                    document.getElementById('disconnectBtn').classList.add('hidden');
+                });
+            }
+        }
+        
+        function handleIncomingData(buffer) {
+             const data = new Uint8Array(buffer);
+             if (data.length >= 2) {
+                 let dist = data[0];
+                 document.getElementById('distVal').innerText = dist;
+                 document.getElementById('tempVal').innerText = data[1];
+
+                 // LOGIC FIX: Changed to <= 2
+                 if (dist > 0 && dist <= HAZARD_DIST) { 
+                     if (!autoHazard) {
+                         autoHazard = true;
+                         updateHazardUI();
+                         triggerVibrate('heavy'); 
+                     }
+                 } else {
+                     if (autoHazard) {
+                         autoHazard = false;
+                         updateHazardUI();
+                     }
+                 }
+             }
+        }
+
+        function setMode(m) {
+            triggerVibrate('click');
+            currentMode = m;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const joyCanvas = document.getElementById('controlCanvas');
+            const colorPanel = document.getElementById('colorModePanel');
+            const calBtn = document.getElementById('calBtn');
+            
+            smoothFwd = 0; smoothTurn = 0;
+            visualState = { fwd: 0, turn: 0 };
+
+            if (m === 'LED') {
+                joyCanvas.classList.add('hidden');        
+                colorPanel.classList.remove('hidden');      
+                calBtn.classList.add('hidden');
+                initColorWheel(); 
+            } else if (m === 'tilt') {
+                joyCanvas.classList.remove('hidden');     
+                colorPanel.classList.add('hidden');       
+                calBtn.classList.remove('hidden');
+            } else {
+                joyCanvas.classList.remove('hidden');     
+                colorPanel.classList.add('hidden');       
+                calBtn.classList.add('hidden');
+            }
+
+            controlState = { fwd: 0, turn: 0 };
+            updateUI();
+            if (m === 'tilt' && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().catch(console.error);
+            }
+        }
+
+        function applyDeadzone(val) { return (Math.abs(val) < DEADZONE) ? 0 : val; }
+
+        function handleTouchStart(e) {
+            if (currentMode !== 'joy') return;
+            e.preventDefault();
+            joyActive = true;
+            triggerVibrate('click');
+            processJoystick(e.touches[0]);
+        }
+        function handleTouchMove(e) {
+            if (currentMode !== 'joy' || !joyActive) return;
+            e.preventDefault();
+            processJoystick(e.touches[0]);
+        }
+        function handleTouchEnd(e) {
+            if (currentMode !== 'joy') return;
+            e.preventDefault();
+            joyActive = false;
+            controlState = { fwd: 0, turn: 0 };
+            triggerVibrate('zero');
+            updateUI();
+        }
+
+        function processJoystick(touch) {
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            const normalizedDist = Math.min(distance, maxRadius) / maxRadius;
+            const angle = Math.atan2(dy, dx);
+            let turn = Math.cos(angle) * normalizedDist * 100;
+            let fwd = -(Math.sin(angle) * normalizedDist * 100);
+            controlState.fwd = Math.round(applyDeadzone(fwd));
+            controlState.turn = Math.round(applyDeadzone(turn));
+            
+            handleHaptics(controlState.fwd, controlState.turn);
+            updateUI();
+        }
+
+        function initColorWheel() {
+            const colorCanvas = document.getElementById('colorCanvas');
+            const ctx = colorCanvas.getContext('2d');
+            const radius = colorCanvas.width / 2;
+            ctx.clearRect(0,0,300,300);
+            for (let angle = 0; angle < 360; angle++) {
+                const startAngle = (angle - 2) * Math.PI / 180;
+                const endAngle = (angle + 2) * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = `hsl(${angle}, 100%, 50%)`;
+                ctx.fill();
+            }
+            ctx.beginPath();
+            ctx.arc(radius, radius, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#000000";
+            ctx.fill();
+            colorCanvas.removeEventListener('touchstart', handleColorTouch); 
+            colorCanvas.removeEventListener('touchmove', handleColorTouch);
+            colorCanvas.addEventListener('touchstart', handleColorTouch, {passive: false});
+            colorCanvas.addEventListener('touchmove', handleColorTouch, {passive: false});
+        }
+
+        function handleColorTouch(e) {
+            e.preventDefault();
+            const colorCanvas = document.getElementById('colorCanvas');
+            const ctx = colorCanvas.getContext('2d');
+            const rect = colorCanvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            if(x < 0 || y < 0 || x > 300 || y > 300) return;
+            const pixel = ctx.getImageData(x, y, 1, 1).data;
+            ledState.r = pixel[0]; ledState.g = pixel[1]; ledState.b = pixel[2];
+            document.getElementById('selectedColorPreview').style.backgroundColor = `rgb(${ledState.r},${ledState.g},${ledState.b})`;
+        }
+
+        function updateUI() {
+            document.getElementById('fwdVal').innerText = controlState.fwd;
+            document.getElementById('turnVal').innerText = controlState.turn;
+        }
+        function setStatus(msg) { document.getElementById('status').innerText = msg; }
+        function log(msg) { 
+            const con = document.getElementById('debugConsole');
+            con.innerHTML = `> ${msg}<br>` + con.innerHTML;
+        }
+
+        function drawLoop() {
+            requestAnimationFrame(drawLoop);
+            if(currentMode === 'LED') return;
+            ctx.clearRect(0, 0, width, height);
+            
+            if (currentMode === 'joy') {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                
+                let stickX = centerX;
+                let stickY = centerY;
+                if (controlState.fwd !== 0 || controlState.turn !== 0) {
+                    stickX += (controlState.turn / 100) * maxRadius;
+                    stickY -= (controlState.fwd / 100) * maxRadius;
+                }
+                ctx.beginPath();
+                ctx.arc(stickX, stickY, 30, 0, Math.PI * 2);
+                ctx.fillStyle = joyActive ? '#00d2ff' : 'rgba(255,255,255,0.5)';
+                ctx.fill();
+            } else {
+                const tiltY = centerY - (visualState.fwd * 2); 
+                const tiltRot = (visualState.turn * 0.5) * (Math.PI / 180);
+                
+                ctx.save();
+                ctx.translate(centerX, tiltY);
+                ctx.rotate(tiltRot);
+                ctx.beginPath();
+                ctx.moveTo(-100, 0);
+                ctx.lineTo(100, 0);
+                
+                if(Math.abs(visualState.fwd) > 95) ctx.strokeStyle = '#ff0055';
+                else ctx.strokeStyle = '#00d2ff';
+                
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+    </script>
+</body>
+</html>
